@@ -11,7 +11,8 @@ export default function DocumentUpload() {
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [progress, setProgress] = useState(0)
   const [fileName, setFileName] = useState<string | null>(null)
-  const [showModal, setShowModal] = useState(false)
+
+  const [file, setFile] = useState<File | null>(null)
 
   const handleFile = (file: File) => {
     setFileName(file.name)
@@ -26,21 +27,45 @@ export default function DocumentUpload() {
         setProgress(0)
       }
     }, 100)
+    setFile(file)
   }
 
   const startOCR = () => {
-    setShowModal(true)
-    setUploadState('processing')
-    let p = 0
-    const ocr = setInterval(() => {
-      p += 2
-      setProgress(p)
-      if (p >= 100) {
-        clearInterval(ocr)
-        setUploadState('completed')
-      }
-    }, 80)
+    handleUpload(file)
   }
+
+
+  // 2. Submit the file using a POST request
+  const handleUpload = async (file: any) => {
+
+    if (!file) {
+      alert('Please select a file first!');
+      return;
+    }
+
+    // File data must be wrapped in a FormData object
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Replace with your actual backend API endpoint
+      const response = await fetch('http://localhost:8000/ocr/', {
+        method: 'POST',
+        body: formData,
+        // Note: Do NOT manually set the 'Content-Type' header to 'multipart/form-data'.
+        // The browser will automatically set it along with the correct boundary boundary string.
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Success:', result);
+      } else {
+        console.error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error during upload:', error);
+    }
+  };
 
   const stateConfig = {
     idle: { label: 'Ready to upload', color: '#64748b', bg: '#f8fafc' },
@@ -189,45 +214,6 @@ export default function DocumentUpload() {
           </div>
         </div>
       </div>
-
-      {/* OCR Progress Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ padding: 32, textAlign: 'center' }}>
-            {uploadState === 'processing' ? (
-              <>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                  <span style={{ width: 28, height: 28, border: '3px solid', borderColor: '#7C3AED transparent transparent transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                </div>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a2332', marginBottom: 8 }}>OCR Processing</h3>
-                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>Extracting product data from your catalogue…</p>
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, color: '#374151' }}>Analysing pages</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#7C3AED' }}>{progress}%</span>
-                  </div>
-                  <div className="progress-bar" style={{ height: 8 }}>
-                    <div className="progress-fill" style={{ width: `${progress}%`, background: '#7C3AED' }} />
-                  </div>
-                </div>
-                <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 16 }}>This may take 1–2 minutes for large documents</p>
-              </>
-            ) : (
-              <>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                  <svg width="32" height="32" fill="none" stroke="#4CAF50" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
-                </div>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a2332', marginBottom: 8 }}>Extraction Complete!</h3>
-                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>47 products extracted from {fileName}. Review and map the data to your catalogue fields.</p>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                  <button className="btn-secondary" onClick={() => setShowModal(false)}>Close</button>
-                  <button className="btn-primary" onClick={() => { setShowModal(false); navigate('/catalogue-ocr/review') }}>Review Extraction</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
