@@ -1,0 +1,10 @@
+{
+  "description": "Streamlines supplier management with product catalog OCR, order tracking, pricing, and analytics to enhance efficiency and data accuracy.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
