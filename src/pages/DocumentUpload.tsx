@@ -30,12 +30,27 @@ export default function DocumentUpload() {
     setFile(file)
   }
 
-  const startOCR = () => {
+  const startOCR = async () => {
+
+    const response = await fetch('http://localhost:8000/ocr/', { credentials: 'include' })
     handleUpload(file)
   }
 
+  const getCookie = (name: string) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 
-  // 2. Submit the file using a POST request
   const handleUpload = async (file: any) => {
 
     if (!file) {
@@ -43,17 +58,15 @@ export default function DocumentUpload() {
       return;
     }
 
-    // File data must be wrapped in a FormData object
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      // Replace with your actual backend API endpoint
       const response = await fetch('http://localhost:8000/ocr/', {
+        credentials: 'include',
         method: 'POST',
         body: formData,
-        // Note: Do NOT manually set the 'Content-Type' header to 'multipart/form-data'.
-        // The browser will automatically set it along with the correct boundary boundary string.
+        headers: { 'X-CSRFToken': getCookie('csrftoken') ?? '' }
       });
 
       if (response.ok) {
